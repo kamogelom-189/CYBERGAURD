@@ -1,0 +1,49 @@
+name: CI – Build & Test
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up .NET 8 ─────────────────────────────────────────────────────
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # ── 3. Restore dependencies ──────────────────────────────────────────────
+      - name: Restore NuGet packages
+        run: dotnet restore CyberBot/CyberBot.csproj
+
+      # ── 4. Build (Release) ───────────────────────────────────────────────────
+      - name: Build
+        run: dotnet build CyberBot/CyberBot.csproj --configuration Release --no-restore
+
+      # ── 5. Publish self-contained binary (optional artefact) ─────────────────
+      - name: Publish
+        run: |
+          dotnet publish CyberBot/CyberBot.csproj \
+            --configuration Release \
+            --output publish/${{ matrix.os }} \
+            --no-build
+
+      # ── 6. Upload build artefact ─────────────────────────────────────────────
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyberbot-${{ matrix.os }}
+          path: publish/${{ matrix.os }}

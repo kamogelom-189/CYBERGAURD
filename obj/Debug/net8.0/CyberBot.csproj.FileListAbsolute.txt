@@ -1,0 +1,14 @@
+C:\Users\Student\Downloads\files (4)\bin\Debug\net8.0\CyberBot.exe
+C:\Users\Student\Downloads\files (4)\bin\Debug\net8.0\CyberBot.deps.json
+C:\Users\Student\Downloads\files (4)\bin\Debug\net8.0\CyberBot.runtimeconfig.json
+C:\Users\Student\Downloads\files (4)\bin\Debug\net8.0\CyberBot.dll
+C:\Users\Student\Downloads\files (4)\bin\Debug\net8.0\CyberBot.pdb
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.AssemblyInfoInputs.cache
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.AssemblyInfo.cs
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.csproj.CoreCompileInputs.cache
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.dll
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\refint\CyberBot.dll
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.pdb
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\CyberBot.genruntimeconfig.cache
+C:\Users\Student\Downloads\files (4)\obj\Debug\net8.0\ref\CyberBot.dll
