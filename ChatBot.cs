@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading;
+
 namespace CyberBot;
 
 /// <summary>
@@ -46,19 +50,63 @@ public class ChatBot
         ConsoleUI.SectionHeader("Let's get acquainted");
 
         string? name = null;
-        while (string.IsNullOrWhiteSpace(name))
+        int attempts = 0;
+        const int maxAttempts = 5;
+
+        while (string.IsNullOrWhiteSpace(name) && attempts < maxAttempts)
         {
+            attempts++;
+
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.Write("  What's your name? > ");
             Console.ForegroundColor = ConsoleColor.White;
-            name = Console.ReadLine()?.Trim();
+            var raw = Console.ReadLine();
             Console.ResetColor();
 
-            if (string.IsNullOrWhiteSpace(name))
+            // Handle EOF / Ctrl+Z
+            if (raw is null)
+            {
+                ConsoleUI.PrintInfo("No input detected. Exiting.");
+                Environment.Exit(0);
+            }
+
+            var trimmed = raw.Trim();
+
+            // Recognize inline commands at the prompt
+            if (string.Equals(trimmed, "help", StringComparison.OrdinalIgnoreCase))
+            {
+                ConsoleUI.ShowHelp();
+                continue;
+            }
+
+            if (string.Equals(trimmed, "exit", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "quit", StringComparison.OrdinalIgnoreCase))
+            {
+                if (ConfirmExit())
+                    Environment.Exit(0);
+                else
+                    continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
                 ConsoleUI.PrintError("I need a name to address you properly. Please try again.");
+                continue;
+            }
+
+            name = trimmed;
         }
 
-        _username = SanitiseName(name);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ConsoleUI.PrintInfo("No valid name entered. Proceeding with default name 'User'.");
+            _username = "User";
+        }
+        else
+        {
+            _username = SanitiseName(name);
+        }
+
         Console.WriteLine();
         ConsoleUI.BotSay($"Great to meet you, {_username}! 🙌 I'm here to help you stay safe online.");
         ConsoleUI.BotSay("Type 'help' to see available topics, or just ask me anything!");
@@ -75,32 +123,58 @@ public class ChatBot
             if (input is null)
                 break;
 
-            var (response, tip, isExit, isHelp) = ResponseEngine.GetResponse(input);
-
-            if (isExit)
-                break;
-
-            if (isHelp)
+            // Quick local commands before engine (fast-path)
+            var trimmed = input.Trim();
+            if (string.Equals(trimmed, "exit", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "quit", StringComparison.OrdinalIgnoreCase))
             {
-                ConsoleUI.ShowHelp();
-                continue;
-            }
-
-            // Special case: daily tips list
-            if (input.Trim().ToLower() is "tip" or "tips" or "advice" or "checklist" or "best practice")
-            {
-                ConsoleUI.BotSay(response);
-                PrintTips();
-            }
-            else
-            {
-                Console.WriteLine();
-                ConsoleUI.BotSay(response);
-                if (tip is not null)
+                if (ConfirmExit())
+                    break;
+                else
                 {
-                    Thread.Sleep(300);
-                    ConsoleUI.BotSay(tip);
+                    ConsoleUI.DrawSeparator();
+                    continue;
                 }
+            }
+
+            try
+            {
+                var (response, tip, isExit, isHelp) = ResponseEngine.GetResponse(input);
+
+                if (isExit)
+                    break;
+
+                if (isHelp)
+                {
+                    ConsoleUI.ShowHelp();
+                    continue;
+                }
+
+                // Special case: daily tips list
+                if (trimmed.Equals("tip", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.Equals("tips", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.Equals("advice", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.Equals("checklist", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.Equals("best practice", StringComparison.OrdinalIgnoreCase))
+                {
+                    ConsoleUI.BotSay(response);
+                    PrintTips();
+                }
+                else
+                {
+                    Console.WriteLine();
+                    ConsoleUI.BotSay(response);
+                    if (tip is not null)
+                    {
+                        try { Thread.Sleep(300); } catch { /* ignore sleep interruptions */ }
+                        ConsoleUI.BotSay(tip);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log and continue the session rather than crash the app.
+                ConsoleUI.PrintError($"An error occurred while processing your message: {ex.Message}");
             }
 
             ConsoleUI.DrawSeparator();
@@ -119,7 +193,7 @@ public class ChatBot
             Console.Write($"    {i + 1,2}. ");
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine(tips[i]);
-            Thread.Sleep(60);
+            try { Thread.Sleep(60); } catch { }
         }
         Console.ResetColor();
     }
@@ -129,5 +203,14 @@ public class ChatBot
     {
         var clean = new string(raw.Where(c => c >= 32 && c < 127).ToArray()).Trim();
         return clean.Length > 30 ? clean[..30] : clean.Length == 0 ? "User" : clean;
+    }
+
+    private static bool ConfirmExit()
+    {
+        ConsoleUI.PrintInfo("Are you sure you want to exit? (y/N)");
+        Console.ForegroundColor = ConsoleColor.White;
+        var resp = Console.ReadLine();
+        Console.ResetColor();
+        return !string.IsNullOrWhiteSpace(resp) && resp.Trim().Equals("y", StringComparison.OrdinalIgnoreCase);
     }
 }
