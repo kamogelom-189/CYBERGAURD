@@ -40,9 +40,7 @@ dotnet run
 ### 3 — Build Release binary
 ```bash
 dotnet build -c Release
-```
 
----
 
 ## Project Structure
 
